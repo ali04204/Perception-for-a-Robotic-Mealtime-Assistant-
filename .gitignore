@@ -209,6 +209,8 @@ __marimo__/
 # Project data and artifacts
 data/raw/**
 !data/raw/.gitkeep
+!data/labels/*.csv
+!data/labels/.gitkeep
 data/labels/**
 !data/labels/.gitkeep
 data/splits/**
