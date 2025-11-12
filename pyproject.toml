@@ -1,0 +1,23 @@
+project:
+  name: prma
+  seed: 42
+
+paths:
+  data_root: "data"
+  raw: "data/raw"
+  labels: "data/labels"
+  splits: "data/splits"
+  results: "results"
+
+dataset:
+  fps: 30
+  img_height: 480
+  img_width: 640
+
+features:
+  use_mediapipe: true
+  mediapipe_confidence: 0.7
+
+training:
+  batch_size: 16
+  num_workers: 4
