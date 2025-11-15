@@ -17,6 +17,9 @@ FEATURE_NAMES = [
     "right_elbow_angle_deg",
 ]
 
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+
 
 def angle_deg(a, b, c):
     if any(np.isnan(v) for v in [*a, *b, *c]):
@@ -73,6 +76,36 @@ def main():
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             rgb.flags.writeable = False
             res = holistic.process(rgb)
+
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb.flags.writeable = False
+            res = holistic.process(rgb)
+
+            # draw pose and hands on the BGR frame
+            frame.flags.writeable = True
+            if res.pose_landmarks:
+                mp_drawing.draw_landmarks(
+                    frame,
+                    res.pose_landmarks,
+                    mp_holistic.POSE_CONNECTIONS,
+                    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
+                )
+
+            if res.left_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    frame,
+                    res.left_hand_landmarks,
+                    mp_holistic.HAND_CONNECTIONS,
+                    landmark_drawing_spec=mp_drawing_styles.get_default_hand_landmarks_style(),
+                )
+
+            if res.right_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    frame,
+                    res.right_hand_landmarks,
+                    mp_holistic.HAND_CONNECTIONS,
+                    landmark_drawing_spec=mp_drawing_styles.get_default_hand_landmarks_style(),
+                )
 
             pred_label = "no_pose"
             p_ready = 0.0
