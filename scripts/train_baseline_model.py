@@ -69,7 +69,7 @@ def main():
     X_test, y_test, _ = prepare_xy(test_df)
 
     clf = RandomForestClassifier(
-        n_estimators=200,
+        n_estimators=400,
         class_weight="balanced",
         random_state=42,
         n_jobs=-1,

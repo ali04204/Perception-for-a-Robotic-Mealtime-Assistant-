@@ -1,95 +1,60 @@
-import pathlib
 import pandas as pd
-import numpy as np
+from pathlib import Path
+from sklearn.model_selection import train_test_split
 
+# This script:
+# 1. Loads ALL *_windows.csv files in results/features
+# 2. Concatenates them into all_data.csv
+# 3. Splits by video into train_data.csv and test_data.csv
 
-def load_video_data(features_path: pathlib.Path, labels_path: pathlib.Path) -> pd.DataFrame:
-    features_path = features_path.resolve()
-    labels_path = labels_path.resolve()
-    assert features_path.exists(), f"Missing features file {features_path}"
-    assert labels_path.exists(), f"Missing labels file {labels_path}"
+root = Path("results") / "features"
 
-    print(f"Loading {features_path.name} and {labels_path.name}")
+# Pick up every per video windows file
+window_files = [
+    p for p in root.glob("*_windows.csv")
+    if p.name not in ["train_data.csv", "test_data.csv", "all_data.csv"]
+]
 
-    df_feat = pd.read_csv(features_path)
-    df_lab = pd.read_csv(labels_path)
+if not window_files:
+    print("No *_windows.csv files found in results/features. Run make_dataset.py first.")
+    raise SystemExit
 
-    # join on frame and time_sec
-    df = pd.merge(df_feat, df_lab, on=["frame", "time_sec"], how="inner")
-    return df
+dfs = []
+for p in window_files:
+    df = pd.read_csv(p)
+    # source is the video id, for example "4" or "demo"
+    df["source"] = p.stem.replace("_windows", "")
+    dfs.append(df)
 
+all_data = pd.concat(dfs, ignore_index=True)
 
-def main():
-    repo = pathlib.Path(__file__).resolve().parents[1]
-    feat_dir = repo / "results" / "features"
+all_path = root / "all_data.csv"
+all_data.to_csv(all_path, index=False)
+print(f"Saved {all_path} with {len(all_data)} rows")
 
-    if not feat_dir.exists():
-        print(f"Features directory not found: {feat_dir}")
-        return
+sources = sorted(all_data["source"].unique())
+print("All videos:", sources)
 
-    feature_files = sorted(feat_dir.glob("*_features.csv"))
-    if not feature_files:
-        print("No *_features.csv files found")
-        return
+# Split videos into train and test sets
+train_sources, test_sources = train_test_split(
+    sources,
+    test_size=0.25,
+    random_state=42
+)
 
-    all_rows = []
+train_df = all_data[all_data["source"].isin(train_sources)].reset_index(drop=True)
+test_df = all_data[all_data["source"].isin(test_sources)].reset_index(drop=True)
 
-    for feat_path in feature_files:
-        base = feat_path.stem.replace("_features", "")
-        labels_path = feat_dir / f"{base}_frame_labels.csv"
+train_path = root / "train_data.csv"
+test_path = root / "test_data.csv"
 
-        if not labels_path.exists():
-            print(f"Skipping {feat_path.name} because labels {labels_path.name} are missing")
-            continue
+# Drop the string column "source" from the files used for training
+cols_to_save = [c for c in train_df.columns if c != "source"]
 
-        df_video = load_video_data(feat_path, labels_path)
-        df_video["video"] = base
-        all_rows.append(df_video)
+train_df[cols_to_save].to_csv(train_path, index=False)
+test_df[cols_to_save].to_csv(test_path, index=False)
 
-    if not all_rows:
-        print("No videos with both features and labels. Nothing to do.")
-        return
-
-    full_df = pd.concat(all_rows, ignore_index=True)
-
-    # drop unlabeled rows
-    if "label" not in full_df.columns:
-        print("No label column found. Did align_segments_to_frames.py run correctly?")
-        return
-
-    full_df = full_df[full_df["label"] != "unlabeled"].reset_index(drop=True)
-
-    # save combined dataset
-    full_path = feat_dir / "all_data.csv"
-    full_df.to_csv(full_path, index=False)
-    print(f"Saved combined dataset to {full_path}")
-
-    # train and test split by video
-    video_ids = sorted(full_df["video"].unique())
-    print("Videos in dataset:", video_ids)
-
-    rng = np.random.RandomState(0)
-    perm = rng.permutation(len(video_ids))
-    n_train = max(1, int(0.8 * len(video_ids)))
-
-    train_video_ids = [video_ids[i] for i in perm[:n_train]]
-    test_video_ids = [video_ids[i] for i in perm[n_train:]]
-
-    print("Train videos:", train_video_ids)
-    print("Test videos:", test_video_ids)
-
-    train_df = full_df[full_df["video"].isin(train_video_ids)].reset_index(drop=True)
-    test_df = full_df[full_df["video"].isin(test_video_ids)].reset_index(drop=True)
-
-    train_path = feat_dir / "train_data.csv"
-    test_path = feat_dir / "test_data.csv"
-    train_df.to_csv(train_path, index=False)
-    test_df.to_csv(test_path, index=False)
-
-    print(f"Saved train split to {train_path}")
-    print(f"Saved test split to {test_path}")
-    print("Done.")
-
-
-if __name__ == "__main__":
-    main()
+print("Train videos:", train_sources)
+print("Test videos:", test_sources)
+print("Train rows:", len(train_df))
+print("Test rows:", len(test_df))
