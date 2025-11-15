@@ -41,6 +41,8 @@ def main():
     assert model_path.exists(), f"Missing model {model_path}"
 
     clf = joblib.load(model_path)
+    print(f"Loaded model from {model_path}")
+    print("model expects features:", clf.n_features_in_)
 
     # video source
     if len(sys.argv) > 1:
