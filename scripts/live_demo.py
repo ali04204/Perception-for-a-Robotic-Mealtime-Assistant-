@@ -77,10 +77,6 @@ def main():
             rgb.flags.writeable = False
             res = holistic.process(rgb)
 
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            rgb.flags.writeable = False
-            res = holistic.process(rgb)
-
             # draw pose and hands on the BGR frame
             frame.flags.writeable = True
             if res.pose_landmarks:
@@ -203,33 +199,58 @@ def main():
                     dtype=float,
                 )
 
-                if np.any(np.isnan(feat_vec)):
-                    pred_label = "unknown"
-                    p_ready = 0.0
-                else:
-                    X = feat_vec.reshape(1, -1)
-                    pred = clf.predict(X)[0]
-                    if hasattr(clf, "predict_proba"):
-                        proba = clf.predict_proba(X)[0]
-                        p_ready = float(proba[1])
-                    else:
-                        p_ready = 0.0
+                # replace NaNs with zeros so the model can still run
+                feat_vec = np.nan_to_num(feat_vec, nan=0.0)
 
-                    pred_label = "READY" if pred == 1 else "NOT_READY"
+                X = feat_vec.reshape(1, -1)
+                pred = clf.predict(X)[0]
+                if hasattr(clf, "predict_proba"):
+                    proba = clf.predict_proba(X)[0]
+                    p_ready = float(proba[1])
+                else:
+                    p_ready = 0.0
+
+                pred_label = "READY" if pred == 1 else "NOT_READY"
+
 
             # overlay text
             text = f"{pred_label}  p_ready={p_ready:.2f}"
-            color = (0, 255, 0) if pred_label == "READY" else (0, 0, 255)
+            if pred_label == "READY":
+                color = (0, 255, 0)
+            elif pred_label == "NOT_READY":
+                color = (0, 0, 255)
+            else:
+                color = (0, 255, 255)
+
+            h, w, _ = frame.shape
+
+            # top bar indicator
+            cv2.rectangle(frame, (0, 0), (w, 40), color, -1)
             cv2.putText(
                 frame,
-                text,
-                (30, 40),
+                pred_label,
+                (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1.0,
-                color,
+                (0, 0, 0),
                 2,
                 cv2.LINE_AA,
             )
+
+            # main text in the center
+            cv2.putText(
+                frame,
+                text,
+                (w // 2 - 200, 80),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.2,
+                color,
+                3,
+                cv2.LINE_AA,
+            )
+
+            print(f"Pred: {pred_label}  p_ready={p_ready:.2f}")
+
 
             cv2.imshow("Live readiness demo", frame)
             key = cv2.waitKey(1) & 0xFF
