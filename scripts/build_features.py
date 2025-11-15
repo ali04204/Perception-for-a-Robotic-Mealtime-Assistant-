@@ -4,8 +4,6 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-IN_COL = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else None
-assert IN_COL is not None and IN_COL.exists(), "Give the path to the holistic CSV, for example results\\features\\demo_holistic.csv"
 
 def angle_deg(a, b, c):
     # angle at b formed by points a-b and c-b in 2D image coords
@@ -20,14 +18,22 @@ def angle_deg(a, b, c):
     cosang = np.clip(np.dot(ba, bc) / (na * nc), -1.0, 1.0)
     return float(np.degrees(np.arccos(cosang)))
 
-def main(in_csv: pathlib.Path):
+
+def build_features_for_file(in_csv: pathlib.Path):
+    in_csv = in_csv.resolve()
+    assert in_csv.exists(), f"Input CSV not found: {in_csv}"
+
+    print(f"Building features for {in_csv.name}")
+
     df = pd.read_csv(in_csv)
     # estimate fps from time_sec
     dt = df["time_sec"].diff()
     fps = float(np.round(1.0 / np.median(dt.dropna().replace(0, np.nan))))
+
     # helpers for pose and hands
     def pxy(idx):
         return df[f"p{idx}_x"], df[f"p{idx}_y"]
+
     def hxy(prefix, idx):
         return df[f"{prefix}{idx}_x"], df[f"{prefix}{idx}_y"]
 
@@ -61,6 +67,7 @@ def main(in_csv: pathlib.Path):
     # elbow angles using pose points
     lex_x, lex_y = pxy(13)   # left elbow
     rex_x, rex_y = pxy(14)   # right elbow
+
     # vectorized angle computation row by row
     left_angles = []
     right_angles = []
@@ -79,22 +86,57 @@ def main(in_csv: pathlib.Path):
     df["rh_speed"] = np.sqrt((rhx.diff())**2 + (rhy.diff())**2) * fps
 
     # simple smoothing to reduce jitter
-    for col in ["lh_to_mouth","rh_to_mouth","lwrist_rel_shoulder_y","rwrist_rel_shoulder_y",
-                "left_elbow_angle_deg","right_elbow_angle_deg","lh_speed","rh_speed"]:
+    for col in ["lh_to_mouth", "rh_to_mouth",
+                "lwrist_rel_shoulder_y", "rwrist_rel_shoulder_y",
+                "left_elbow_angle_deg", "right_elbow_angle_deg",
+                "lh_speed", "rh_speed"]:
         df[col] = df[col].rolling(window=5, min_periods=1, center=True).median()
 
     # keep only useful columns
-    keep = ["frame","time_sec",
-            "lh_to_mouth","rh_to_mouth",
-            "lh_speed","rh_speed",
-            "lwrist_rel_shoulder_y","rwrist_rel_shoulder_y",
-            "left_elbow_angle_deg","right_elbow_angle_deg"]
+    keep = ["frame", "time_sec",
+            "lh_to_mouth", "rh_to_mouth",
+            "lh_speed", "rh_speed",
+            "lwrist_rel_shoulder_y", "rwrist_rel_shoulder_y",
+            "left_elbow_angle_deg", "right_elbow_angle_deg"]
     out = df[keep].copy()
 
-    out_path = in_csv.parent / f"{in_csv.stem.replace('_holistic','')}_features.csv"
+    out_path = in_csv.parent / f"{in_csv.stem.replace('_holistic', '')}_features.csv"
     out.to_csv(out_path, index=False)
     print(f"Estimated fps: {fps}")
     print(f"Saved engineered features to {out_path}")
 
+
+def main():
+    # Case 1: old behaviour, single file given on command line
+    if len(sys.argv) > 1:
+        in_col = pathlib.Path(sys.argv[1])
+        build_features_for_file(in_col)
+        print("Done.")
+        return
+
+    # Case 2: no argument, batch over all *_holistic.csv in results/features
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    feat_dir = repo / "results" / "features"
+    print(f"Batch mode. Looking for holistic CSVs in {feat_dir}")
+
+    if not feat_dir.exists():
+        print(f"Features directory not found: {feat_dir}")
+        sys.exit(1)
+
+    holistic_files = sorted(feat_dir.glob("*_holistic.csv"))
+    if not holistic_files:
+        print("No *_holistic.csv files found")
+        sys.exit(1)
+
+    for in_csv in holistic_files:
+        out_path = in_csv.parent / f"{in_csv.stem.replace('_holistic', '')}_features.csv"
+        if out_path.exists():
+            print(f"Skipping {in_csv.name} since {out_path.name} already exists")
+            continue
+        build_features_for_file(in_csv)
+
+    print("Batch feature building done.")
+
+
 if __name__ == "__main__":
-    main(IN_COL)
+    main()
