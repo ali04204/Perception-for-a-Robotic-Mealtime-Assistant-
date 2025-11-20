@@ -7,3 +7,4 @@ data/holistic/
 data/features/
 results/
 models/
+*.joblib filter=lfs diff=lfs merge=lfs -text
