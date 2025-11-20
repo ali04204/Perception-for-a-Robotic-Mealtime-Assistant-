@@ -207,34 +207,17 @@ marimo/_lsp/
 __marimo__/
 
 # Project data and artifacts
-data/raw/**
-!data/raw/.gitkeep
-!data/labels/*.csv
-!data/labels/.gitkeep
-data/labels/**
-!data/labels/.gitkeep
-data/splits/**
-!data/splits/.gitkeep
-results/**
-!results/.gitkeep
-report/**
-!report/.gitkeep
 
 # Model weights and large artifacts
-*.pt
 *.pth
 *.ckpt
 *.onnx
-*.pb
 *.tflite
 *.h5
-*.weights
 *.pkl
 
 # Training logs and run dirs
-logs/**
 runs/**
-wandb/**
 .cache/**
 
 
