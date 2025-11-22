@@ -22,11 +22,13 @@ def main():
     # Labels  map to integers 0 and 1
     y = ds["label"].map({"not_ready": 0, "ready": 1}).astype(int)
 
-    # Features  everything except label and window times
-    X = ds.drop(columns=["label", "t0", "t1"])
+    # Features  everything except label, window times, and video identifier
+    cols_to_drop = ["label", "t0", "t1", "video"]
+    X = ds.drop(columns=cols_to_drop, errors="ignore")
 
     print(f"Training on {ds_path.name}")
     print(f"Feature columns ({len(X.columns)}): {list(X.columns)}")
+
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
