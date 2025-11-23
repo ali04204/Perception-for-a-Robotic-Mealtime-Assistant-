@@ -1,0 +1,19 @@
+Phase 2 – Dataset target
+
+Number of participants:
+- Aim: 10
+- Hard minimum: 8
+
+Clips per person:
+- Target: 6 clips per person
+
+Total clips:
+- Target: ~60 clips total if 10 participants
+
+Minimum transitions per clip:
+- At least 1 clear Not Ready → Ready transition in each clip
+
+Clip properties:
+- Duration: 8–12 seconds
+- Frame rate: ~25–30 fps
+- Each clip must contain both not_ready and ready states
