@@ -25,7 +25,7 @@ def main():
     cfg_path = repo / "configs" / "default.yaml"
     with open(cfg_path, "r") as f:
         cfg = yaml.safe_load(f)
-    results_dir = repo / cfg["paths"]["results"] / "features"
+    results_dir = repo / cfg["paths"]["results"] / "holistic"
     results_dir.mkdir(parents=True, exist_ok=True)
 
     # Decide which videos to process

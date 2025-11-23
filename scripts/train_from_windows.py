@@ -7,6 +7,8 @@ from joblib import dump
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
+from feature_config import WINDOW_FEATURE_COLUMNS
+
 
 
 def main():
@@ -19,15 +21,22 @@ def main():
 
     ds = pd.read_csv(ds_path)
 
-    # Labels  map to integers 0 and 1
+    # Labels map to integers 0 and 1
     y = ds["label"].map({"not_ready": 0, "ready": 1}).astype(int)
 
-    # Features  everything except label, window times, and video identifier
-    cols_to_drop = ["label", "t0", "t1", "video"]
-    X = ds.drop(columns=cols_to_drop, errors="ignore")
+    # Use the canonical frozen feature list
+    missing = [c for c in WINDOW_FEATURE_COLUMNS if c not in ds.columns]
+    if missing:
+        print("Error: dataset is missing expected feature columns:")
+        for c in missing:
+            print("  ", c)
+        sys.exit(1)
+
+    X = ds[WINDOW_FEATURE_COLUMNS].copy()
 
     print(f"Training on {ds_path.name}")
-    print(f"Feature columns ({len(X.columns)}): {list(X.columns)}")
+    print(f"Feature columns ({len(WINDOW_FEATURE_COLUMNS)}): {WINDOW_FEATURE_COLUMNS}")
+
 
 
     X_train, X_test, y_train, y_test = train_test_split(

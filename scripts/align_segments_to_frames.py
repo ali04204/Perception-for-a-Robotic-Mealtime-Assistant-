@@ -40,7 +40,7 @@ def align_one(feat_path: pathlib.Path, seg_path: pathlib.Path):
 
 
 def main():
-    # Case 1. Old behaviour, align one pair given on command line
+    # Case 1. Align one pair given on command line
     if len(sys.argv) >= 3:
         feat_path = pathlib.Path(sys.argv[1])
         seg_path = pathlib.Path(sys.argv[2])
@@ -48,7 +48,7 @@ def main():
         print("Done.")
         return
 
-    # Case 2. No arguments, batch mode over all videos
+    # Case 2. No arguments, batch mode over all *_features.csv
     repo = pathlib.Path(__file__).resolve().parents[1]
     feat_dir = repo / "results" / "features"
     seg_dir = repo / "data" / "labels"
@@ -63,30 +63,21 @@ def main():
         print(f"Segments directory not found: {seg_dir}")
         sys.exit(1)
 
-    feature_files = sorted(feat_dir.glob("*.csv"))
+    feature_files = sorted(feat_dir.glob("*_features.csv"))
     if not feature_files:
-        print("No feature csv files found")
+        print("No *_features.csv files found")
         sys.exit(1)
 
     for feat_path in feature_files:
         stem = feat_path.stem
-
-        # Decide base name
-        if stem.endswith("_features"):
-            base = stem.replace("_features", "")
-        elif stem.endswith("_holistic"):
-            base = stem.replace("_holistic", "")
-        else:
-            # skip files that do not match expected patterns
-            print(f"Skipping {feat_path.name} (unexpected name)")
-            continue
+        base = stem.replace("_features", "")
 
         seg_path = seg_dir / f"{base}_segments.csv"
         if not seg_path.exists():
             print(f"Skipping {feat_path.name} (no segments file {seg_path.name})")
             continue
 
-        out_path = feat_path.parent / f"{stem.replace('_features','')}_frame_labels.csv"
+        out_path = feat_path.parent / f"{base}_frame_labels.csv"
         if out_path.exists():
             print(f"Skipping {feat_path.name} (labels {out_path.name} already exist)")
             continue
@@ -94,6 +85,7 @@ def main():
         align_one(feat_path, seg_path)
 
     print("Batch alignment done.")
+
 
 
 if __name__ == "__main__":

@@ -100,42 +100,52 @@ def build_features_for_file(in_csv: pathlib.Path):
             "left_elbow_angle_deg", "right_elbow_angle_deg"]
     out = df[keep].copy()
 
-    out_path = in_csv.parent / f"{in_csv.stem.replace('_holistic', '')}_features.csv"
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    features_dir = repo / "results" / "features"
+    features_dir.mkdir(parents=True, exist_ok=True)
+
+    vid_id = in_csv.stem.replace("_holistic", "")
+    out_path = features_dir / f"{vid_id}_features.csv"
     out.to_csv(out_path, index=False)
     print(f"Estimated fps: {fps}")
     print(f"Saved engineered features to {out_path}")
 
 
 def main():
-    # Case 1: old behaviour, single file given on command line
+    # Case 1: single file given on command line
     if len(sys.argv) > 1:
-        in_col = pathlib.Path(sys.argv[1])
-        build_features_for_file(in_col)
+        in_csv = pathlib.Path(sys.argv[1])
+        build_features_for_file(in_csv)
         print("Done.")
         return
 
-    # Case 2: no argument, batch over all *_holistic.csv in results/features
+    # Case 2: no argument, batch over all *_holistic.csv in results/holistic
     repo = pathlib.Path(__file__).resolve().parents[1]
-    feat_dir = repo / "results" / "features"
-    print(f"Batch mode. Looking for holistic CSVs in {feat_dir}")
+    holistic_dir = repo / "results" / "holistic"
+    features_dir = repo / "results" / "features"
+    features_dir.mkdir(parents=True, exist_ok=True)
 
-    if not feat_dir.exists():
-        print(f"Features directory not found: {feat_dir}")
+    print(f"Batch mode. Looking for holistic CSVs in {holistic_dir}")
+
+    if not holistic_dir.exists():
+        print(f"Holistic directory not found: {holistic_dir}")
         sys.exit(1)
 
-    holistic_files = sorted(feat_dir.glob("*_holistic.csv"))
+    holistic_files = sorted(holistic_dir.glob("*_holistic.csv"))
     if not holistic_files:
         print("No *_holistic.csv files found")
         sys.exit(1)
 
     for in_csv in holistic_files:
-        out_path = in_csv.parent / f"{in_csv.stem.replace('_holistic', '')}_features.csv"
+        vid_id = in_csv.stem.replace("_holistic", "")
+        out_path = features_dir / f"{vid_id}_features.csv"
         if out_path.exists():
             print(f"Skipping {in_csv.name} since {out_path.name} already exists")
             continue
         build_features_for_file(in_csv)
 
     print("Batch feature building done.")
+
 
 
 if __name__ == "__main__":
