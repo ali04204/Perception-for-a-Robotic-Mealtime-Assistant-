@@ -1,0 +1,52 @@
+{
+  "dataset_path": "results\\features\\all_windows.csv",
+  "features": [
+    "hand_to_mouth_min_mean",
+    "hand_to_mouth_min_std",
+    "hand_to_mouth_min_min",
+    "hand_to_mouth_min_max",
+    "hand_to_mouth_min_slope",
+    "hand_speed_max_mean",
+    "hand_speed_max_std",
+    "hand_speed_max_min",
+    "hand_speed_max_max",
+    "hand_speed_max_slope",
+    "wrist_rel_shoulder_y_min_mean",
+    "wrist_rel_shoulder_y_min_std",
+    "wrist_rel_shoulder_y_min_min",
+    "wrist_rel_shoulder_y_min_max",
+    "wrist_rel_shoulder_y_min_slope",
+    "elbow_angle_deg_min_mean",
+    "elbow_angle_deg_min_std",
+    "elbow_angle_deg_min_min",
+    "elbow_angle_deg_min_max",
+    "elbow_angle_deg_min_slope"
+  ],
+  "label_map": {
+    "not_ready": 0,
+    "ready": 1
+  },
+  "rf_params": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "class_weight": null,
+    "criterion": "gini",
+    "max_depth": 8,
+    "max_features": "sqrt",
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 3,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 200,
+    "n_jobs": -1,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "created_at": "2025-11-29T15:34:08.212507",
+  "git_commit": "3ca47a2494f5505895594c4946daee15a6f0477a"
+}

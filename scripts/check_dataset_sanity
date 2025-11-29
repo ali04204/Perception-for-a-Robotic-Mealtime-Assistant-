@@ -1,0 +1,187 @@
+import pandas as pd
+from pathlib import Path
+from collections import defaultdict, Counter
+
+
+# Paths in your repo
+DATASET_INDEX_PATH = Path("data/dataset_index.csv")
+SEGMENTS_DIR = Path("data/labels")
+FRAME_LABELS_DIR = Path("results/features")   # <- frame labels live here
+WINDOWS_DIR = Path("results/features")
+
+
+def main():
+    print("Using frame labels dir:", FRAME_LABELS_DIR.resolve())
+
+    assert DATASET_INDEX_PATH.exists(), f"Missing {DATASET_INDEX_PATH}"
+    ds_index = pd.read_csv(DATASET_INDEX_PATH)
+
+    # Expect at least these columns
+    if "clip_id" not in ds_index.columns:
+        raise ValueError("dataset_index.csv must have a 'clip_id' column")
+    if "participant_id" not in ds_index.columns:
+        print("Warning: no 'participant_id' column. Participant checks will be skipped")
+
+    per_video_counts = {}
+    per_participant_counts = defaultdict(lambda: Counter({"ready": 0, "not_ready": 0}))
+    per_participant_videos_with_both = defaultdict(int)
+
+    total_frame_counts = Counter()
+    total_window_counts = Counter()
+
+    missing_segments = []
+    missing_frame_labels = []
+    missing_windows = []
+
+    for _, row in ds_index.iterrows():
+        # Strip spaces just in case
+        clip_id = str(row["clip_id"]).strip()
+        participant_id = (
+            str(row["participant_id"]).strip()
+            if "participant_id" in ds_index.columns
+            else "unknown"
+        )
+
+        seg_path = SEGMENTS_DIR / f"{clip_id}_segments.csv"
+        frame_path = FRAME_LABELS_DIR / f"{clip_id}_frame_labels.csv"
+        windows_path = WINDOWS_DIR / f"{clip_id}_windows.csv"
+
+        if not seg_path.exists():
+            missing_segments.append(clip_id)
+
+        if not frame_path.exists():
+            missing_frame_labels.append(clip_id)
+            continue
+
+        # Load frame labels
+        df_frames = pd.read_csv(frame_path)
+
+        if "label" not in df_frames.columns:
+            raise ValueError(f"{frame_path} has no 'label' column")
+
+        # Count per video
+        vc = df_frames["label"].value_counts()
+        ready_count = int(vc.get("ready", 0))
+        not_ready_count = int(vc.get("not_ready", 0))
+
+        per_video_counts[clip_id] = {
+            "participant_id": participant_id,
+            "ready": ready_count,
+            "not_ready": not_ready_count,
+        }
+
+        total_frame_counts["ready"] += ready_count
+        total_frame_counts["not_ready"] += not_ready_count
+
+        # Per participant aggregation
+        per_participant_counts[participant_id]["ready"] += ready_count
+        per_participant_counts[participant_id]["not_ready"] += not_ready_count
+
+        if ready_count > 0 and not_ready_count > 0:
+            per_participant_videos_with_both[participant_id] += 1
+
+        # Windows per class
+        if windows_path.exists():
+            df_windows = pd.read_csv(windows_path)
+            if "label" in df_windows.columns:
+                wc = df_windows["label"].value_counts()
+                total_window_counts["ready"] += int(wc.get("ready", 0))
+                total_window_counts["not_ready"] += int(wc.get("not_ready", 0))
+        else:
+            missing_windows.append(clip_id)
+
+    print("\n===================== PER VIDEO FRAME COUNTS =====================")
+    for clip_id in sorted(per_video_counts.keys()):
+        stats = per_video_counts[clip_id]
+        ready_count = stats["ready"]
+        not_ready_count = stats["not_ready"]
+        both = ready_count > 0 and not_ready_count > 0
+        print(
+            f"clip {clip_id}  "
+            f"participant {stats['participant_id']}  "
+            f"ready={ready_count}  not_ready={not_ready_count}  "
+            f"both_classes={both}"
+        )
+
+    print("\n===================== PER PARTICIPANT FRAME COUNTS =====================")
+    for pid, c in per_participant_counts.items():
+        total = c["ready"] + c["not_ready"]
+        frac_ready = c["ready"] / total if total > 0 else 0.0
+        frac_not_ready = c["not_ready"] / total if total > 0 else 0.0
+        videos_with_both = per_participant_videos_with_both.get(pid, 0)
+        print(
+            f"participant {pid}: "
+            f"frames_ready={c['ready']}  frames_not_ready={c['not_ready']}  "
+            f"ready_frac={frac_ready:.2f}  not_ready_frac={frac_not_ready:.2f}  "
+            f"videos_with_both_classes={videos_with_both}"
+        )
+
+    print("\n===================== GLOBAL FRAME STATS =====================")
+    total_frames = total_frame_counts["ready"] + total_frame_counts["not_ready"]
+    if total_frames == 0:
+        print("No frame labels found")
+    else:
+        frac_ready = total_frame_counts["ready"] / total_frames
+        frac_not_ready = total_frame_counts["not_ready"] / total_frames
+        ratio = (
+            total_frame_counts["ready"] / max(1, total_frame_counts["not_ready"])
+            if total_frame_counts["not_ready"] > 0
+            else float("inf")
+        )
+        print(f"total_frames={total_frames}")
+        print(
+            f"ready={total_frame_counts['ready']}  "
+            f"not_ready={total_frame_counts['not_ready']}"
+        )
+        print(
+            f"ready_frac={frac_ready:.2f}  "
+            f"not_ready_frac={frac_not_ready:.2f}  "
+            f"ready_to_not_ready_ratio={ratio:.2f}"
+        )
+        if frac_ready < 0.2 or frac_ready > 0.8:
+            print("Warning: frame classes look quite imbalanced")
+
+    print("\n===================== GLOBAL WINDOW STATS =====================")
+    total_windows = total_window_counts["ready"] + total_window_counts["not_ready"]
+    if total_windows == 0:
+        print("No window labels found or no *_windows.csv files")
+    else:
+        frac_ready = total_window_counts["ready"] / total_windows
+        frac_not_ready = total_window_counts["not_ready"] / total_windows
+        ratio = (
+            total_window_counts["ready"] / max(1, total_window_counts["not_ready"])
+            if total_window_counts["not_ready"] > 0
+            else float("inf")
+        )
+        print(f"total_windows={total_windows}")
+        print(
+            f"ready={total_window_counts['ready']}  "
+            f"not_ready={total_window_counts['not_ready']}"
+        )
+        print(
+            f"ready_frac={frac_ready:.2f}  "
+            f"not_ready_frac={frac_not_ready:.2f}  "
+            f"ready_to_not_ready_ratio={ratio:.2f}"
+        )
+        if frac_ready < 0.2 or frac_ready > 0.8:
+            print("Warning: window classes look quite imbalanced")
+
+    print("\n===================== MISSING FILES CHECK =====================")
+    if missing_segments:
+        print("Videos missing segment CSVs:", sorted(set(missing_segments)))
+    else:
+        print("All videos have segment CSVs")
+
+    if missing_frame_labels:
+        print("Videos missing frame_labels CSVs:", sorted(set(missing_frame_labels)))
+    else:
+        print("All videos have frame_labels CSVs")
+
+    if missing_windows:
+        print("Videos missing windows CSVs:", sorted(set(missing_windows)))
+    else:
+        print("All videos have windows CSVs")
+
+
+if __name__ == "__main__":
+    main()

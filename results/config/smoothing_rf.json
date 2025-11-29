@@ -1,0 +1,6 @@
+{
+  "enter_threshold": 0.8,
+  "exit_threshold": 0.2,
+  "min_windows_enter": 2,
+  "min_windows_exit": 2
+}

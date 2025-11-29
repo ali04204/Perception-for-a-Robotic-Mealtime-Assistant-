@@ -27,9 +27,4 @@ WINDOW_FEATURE_COLUMNS = [
     "elbow_angle_deg_min_max",
     "elbow_angle_deg_min_slope",
 
-    # Mouth features per window
-    "mouth_width_mean",
-    "mouth_width_std",
-    "mouth_width_min",
-    "mouth_width_max",
 ]

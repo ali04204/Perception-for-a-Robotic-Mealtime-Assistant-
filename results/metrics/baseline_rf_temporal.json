@@ -1,0 +1,67 @@
+{
+  "window_stride_sec_estimate": 1.0,
+  "per_clip": [
+    {
+      "clip_id": 39,
+      "num_windows": 9,
+      "num_true_onsets": 0,
+      "latencies_windows": [],
+      "flicker_flips": 1,
+      "duration_sec": 9.0,
+      "flicker_per_min": 6.666666666666667
+    },
+    {
+      "clip_id": 40,
+      "num_windows": 19,
+      "num_true_onsets": 1,
+      "latencies_windows": [],
+      "flicker_flips": 0,
+      "duration_sec": 19.0,
+      "flicker_per_min": 0.0
+    },
+    {
+      "clip_id": 41,
+      "num_windows": 19,
+      "num_true_onsets": 1,
+      "latencies_windows": [],
+      "flicker_flips": 0,
+      "duration_sec": 19.0,
+      "flicker_per_min": 0.0
+    },
+    {
+      "clip_id": 42,
+      "num_windows": 19,
+      "num_true_onsets": 0,
+      "latencies_windows": [],
+      "flicker_flips": 0,
+      "duration_sec": 19.0,
+      "flicker_per_min": 0.0
+    },
+    {
+      "clip_id": 49,
+      "num_windows": 10,
+      "num_true_onsets": 1,
+      "latencies_windows": [],
+      "flicker_flips": 0,
+      "duration_sec": 10.0,
+      "flicker_per_min": 0.0
+    },
+    {
+      "clip_id": 52,
+      "num_windows": 26,
+      "num_true_onsets": 0,
+      "latencies_windows": [],
+      "flicker_flips": 0,
+      "duration_sec": 26.0,
+      "flicker_per_min": 0.0
+    }
+  ],
+  "aggregate": {
+    "mean_latency_windows": null,
+    "std_latency_windows": null,
+    "mean_latency_sec": null,
+    "std_latency_sec": null,
+    "mean_flicker_per_min": 1.1111111111111112,
+    "std_flicker_per_min": 2.484519974999767
+  }
+}

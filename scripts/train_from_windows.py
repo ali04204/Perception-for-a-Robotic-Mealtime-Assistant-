@@ -1,69 +1,118 @@
-import sys
+import json
 import pathlib
+import sys
+from datetime import datetime
 
-import numpy as np
 import pandas as pd
 from joblib import dump
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import train_test_split
+
 from feature_config import WINDOW_FEATURE_COLUMNS
 
 
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+DEFAULT_WINDOWS_CSV = ROOT / "results" / "features" / "all_windows.csv"
+MODELS_DIR = ROOT / "results" / "models"
+CONFIG_DIR = ROOT / "results" / "config"
+
+
+def get_git_commit() -> str | None:
+    """Return current git commit hash if available."""
+    try:
+        import subprocess
+
+        out = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        return out
+    except Exception:
+        return None
+
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python scripts/train_from_windows.py PATH_TO_WINDOWS_CSV")
-        sys.exit(1)
+    # Choose dataset path
+    if len(sys.argv) > 1:
+        ds_path = pathlib.Path(sys.argv[1]).resolve()
+    else:
+        ds_path = DEFAULT_WINDOWS_CSV
 
-    ds_path = pathlib.Path(sys.argv[1]).resolve()
     assert ds_path.exists(), f"Missing dataset csv: {ds_path}"
+    print(f"Loading windows dataset from: {ds_path}")
 
     ds = pd.read_csv(ds_path)
 
-    # Labels map to integers 0 and 1
-    y = ds["label"].map({"not_ready": 0, "ready": 1}).astype(int)
+    # Basic checks
+    for col in ["split", "label"]:
+        assert col in ds.columns, f"Expected column '{col}' in {ds_path}"
 
-    # Use the canonical frozen feature list
-    missing = [c for c in WINDOW_FEATURE_COLUMNS if c not in ds.columns]
+    # Filter to train split only
+    train_df = ds[ds["split"] == "train"].copy()
+    assert not train_df.empty, "No rows with split == 'train' in dataset"
+
+    # Labels  not_ready -> 0, ready -> 1
+    label_map = {"not_ready": 0, "ready": 1}
+    unknown_labels = set(train_df["label"].unique()) - set(label_map.keys())
+    if unknown_labels:
+        raise ValueError(f"Unexpected labels in data: {unknown_labels}")
+
+    y_train = train_df["label"].map(label_map).astype(int)
+
+    # Features from frozen list
+    missing = [c for c in WINDOW_FEATURE_COLUMNS if c not in train_df.columns]
     if missing:
         print("Error: dataset is missing expected feature columns:")
         for c in missing:
             print("  ", c)
-        sys.exit(1)
+        raise SystemExit(1)
 
-    X = ds[WINDOW_FEATURE_COLUMNS].copy()
+    X_train = train_df[WINDOW_FEATURE_COLUMNS].values
 
-    print(f"Training on {ds_path.name}")
-    print(f"Feature columns ({len(WINDOW_FEATURE_COLUMNS)}): {WINDOW_FEATURE_COLUMNS}")
+    print(f"Train rows: {X_train.shape[0]}")
+    print(f"Feature dimension: {X_train.shape[1]}")
 
-
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.3,
-        random_state=0,
-        stratify=y,
-    )
-
-    clf = RandomForestClassifier(
+    # Define RF
+    rf = RandomForestClassifier(
         n_estimators=200,
-        max_depth=None,
-        random_state=0,
+        max_depth=8,
+        min_samples_leaf=3,
         n_jobs=-1,
+        random_state=42,
     )
-    clf.fit(X_train, y_train)
 
-    y_pred = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    print(f"Test accuracy: {acc:.3f}")
-    print(classification_report(y_test, y_pred, target_names=["not_ready", "ready"]))
+    print("Training Random Forest...")
+    rf.fit(X_train, y_train)
+    print("Training complete.")
 
-    # Save model next to the dataset with a name tied to this csv
-    model_path = ds_path.parent / f"{ds_path.stem}_rf.joblib"
-    dump(clf, model_path)
-    print(f"Saved model to {model_path}")
+    # Ensure output dirs
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Save model
+    model_path = MODELS_DIR / "baseline_rf.joblib"
+    dump(rf, model_path)
+    print(f"Saved RF model to: {model_path}")
+
+    # Save config JSON
+    config = {
+        "dataset_path": str(ds_path.relative_to(ROOT)),
+        "features": list(WINDOW_FEATURE_COLUMNS),
+        "label_map": label_map,
+        "rf_params": rf.get_params(),
+        "created_at": datetime.now().isoformat(),
+    }
+
+    commit = get_git_commit()
+    if commit is not None:
+        config["git_commit"] = commit
+
+    config_path = CONFIG_DIR / "baseline_rf.json"
+    with config_path.open("w", encoding="utf8") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"Saved RF config to: {config_path}")
 
 
 if __name__ == "__main__":
