@@ -1,0 +1,34 @@
+{
+  "val": {
+    "split": "val",
+    "num_windows": 108,
+    "acc": 0.37037037037037035,
+    "f1_ready_as_positive": 0.10526315789473684,
+    "confusion": [
+      [
+        36,
+        24
+      ],
+      [
+        44,
+        4
+      ]
+    ]
+  },
+  "test": {
+    "split": "test",
+    "num_windows": 102,
+    "acc": 0.6372549019607843,
+    "f1_ready_as_positive": 0.7218045112781954,
+    "confusion": [
+      [
+        17,
+        10
+      ],
+      [
+        27,
+        48
+      ]
+    ]
+  }
+}

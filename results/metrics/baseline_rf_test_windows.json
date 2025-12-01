@@ -1,11 +1,9 @@
 {
   "split": "test",
+  "num_windows": 102,
   "accuracy": 0.6372549019607843,
-  "labels": [
-    "not_ready",
-    "ready"
-  ],
-  "confusion_matrix": [
+  "f1_ready_binary": 0.7218045112781954,
+  "confusion": [
     [
       17,
       10
@@ -29,31 +27,14 @@
       "support": 75
     }
   },
-  "classification_report": {
-    "not_ready": {
-      "precision": 0.38636363636363635,
-      "recall": 0.6296296296296297,
-      "f1-score": 0.4788732394366197,
-      "support": 27.0
-    },
-    "ready": {
-      "precision": 0.8275862068965517,
-      "recall": 0.64,
-      "f1-score": 0.7218045112781954,
-      "support": 75.0
-    },
-    "accuracy": 0.6372549019607843,
-    "macro avg": {
-      "precision": 0.606974921630094,
-      "recall": 0.6348148148148148,
-      "f1-score": 0.6003388753574076,
-      "support": 102.0
-    },
-    "weighted avg": {
-      "precision": 0.7107919970496036,
-      "recall": 0.6372549019607843,
-      "f1-score": 0.6574991746142489,
-      "support": 102.0
-    }
+  "macro_avg": {
+    "precision": 0.606974921630094,
+    "recall": 0.6348148148148148,
+    "f1": 0.6003388753574076
+  },
+  "weighted_avg": {
+    "precision": 0.7107919970496036,
+    "recall": 0.6372549019607843,
+    "f1": 0.6574991746142489
   }
 }

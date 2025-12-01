@@ -1,0 +1,7 @@
+{
+  "enter_threshold": 0.55,
+  "exit_threshold": 0.45,
+  "min_windows_enter": 2,
+  "min_windows_exit": 2,
+  "comment": "NN smoothing tuned to probability range ~0.3-0.7."
+}

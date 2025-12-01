@@ -1,0 +1,15 @@
+{
+  "label_map": {
+    "not_ready": 0,
+    "ready": 1
+  },
+  "counts": {
+    "not_ready": 848,
+    "ready": 552
+  },
+  "total_windows": 1400,
+  "class_weights": {
+    "0": 1.650943396226415,
+    "1": 2.536231884057971
+  }
+}

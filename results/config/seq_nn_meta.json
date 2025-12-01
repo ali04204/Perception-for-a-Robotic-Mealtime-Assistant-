@@ -1,0 +1,7 @@
+{
+  "group_col": "video_id",
+  "label_map": {
+    "not_ready": 0,
+    "ready": 1
+  }
+}

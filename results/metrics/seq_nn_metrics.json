@@ -1,0 +1,17 @@
+{
+  "model_type": "seq_gru_window",
+  "best_epoch": 80,
+  "best_val_f1": 0.4827586206896552,
+  "test_acc": 0.6764705882352942,
+  "test_f1": 0.7975460122699386,
+  "test_confusion": [
+    [
+      4,
+      23
+    ],
+    [
+      10,
+      65
+    ]
+  ]
+}
