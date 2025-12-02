@@ -1,0 +1,30 @@
+{
+  "test_acc": 0.2647058823529412,
+  "test_f1": 0.0,
+  "test_confusion": [
+    [
+      27,
+      0
+    ],
+    [
+      75,
+      0
+    ]
+  ],
+  "accuracy": 0.2647058823529412,
+  "f1_not_ready": 0.4186046511627907,
+  "f1_ready": 0.0,
+  "confusion": [
+    [
+      27,
+      0
+    ],
+    [
+      75,
+      0
+    ]
+  ],
+  "window_size": 5,
+  "note": "Window MLP NN on test split with sliding window smoothing over p_ready.",
+  "checkpoint": "results\\models\\baseline_nn.pt"
+}

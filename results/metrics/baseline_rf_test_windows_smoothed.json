@@ -1,0 +1,29 @@
+{
+  "test_acc": 0.6764705882352942,
+  "test_f1": 0.7480916030534351,
+  "test_confusion": [
+    [
+      20,
+      7
+    ],
+    [
+      26,
+      49
+    ]
+  ],
+  "accuracy": 0.6764705882352942,
+  "f1_not_ready": 0.547945205479452,
+  "f1_ready": 0.7480916030534351,
+  "confusion": [
+    [
+      20,
+      7
+    ],
+    [
+      26,
+      49
+    ]
+  ],
+  "window_size": 5,
+  "note": "RF baseline on test split with sliding window smoothing over p_ready."
+}
